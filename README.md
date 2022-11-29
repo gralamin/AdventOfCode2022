@@ -1,11 +1,11 @@
-# AdventOfCode2021
-Advent of Code for 2021 - https://adventofcode.com/2021
+# AdventOfCode2022
+Advent of Code for 2022 - https://adventofcode.com/2022
 
 ## Creating a new date executable
 
 Per day, remember to:
 ```
-export day=day25
+export day=day01
 cargo new $day
 cp day01/Makefile $day/
 touch $day/README.md
@@ -47,7 +47,4 @@ extern crate my_lib;
 
 ## Lib list
 
-* `filelib` - File input/output helper methods to do with basic types (eg, not types in other libraries)
-* `submarinelib` - Provides structs to represent a Submarine, where it is, its movement, etc.
-* `ivec3` - a vector `x,y,z` for math operations.
-* `boardlib` - Handles a 2 dimensional board and coordinate system that can be used with various types.
+No libs yet.
