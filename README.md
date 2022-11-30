@@ -47,4 +47,4 @@ extern crate my_lib;
 
 ## Lib list
 
-No libs yet.
+* `filelib` - A library for common file operations needed in advent of code. Most notably `load_as_ints`, which is used to load input that is just numbers per line.
