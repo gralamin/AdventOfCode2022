@@ -2,6 +2,7 @@ extern crate filelib;
 
 pub use filelib::load_no_blanks;
 
+// Logic solution
 #[derive(PartialEq, Debug, Copy, Clone)]
 pub enum RockPaperScissors {
     Rock,
@@ -122,10 +123,101 @@ pub fn puzzle_b(raw_matches: &Vec<String>) -> i32 {
         .sum();
 }
 
+// ---------------- Alternative solution start -------------------
+const ROCK: i32 = 0;
+const PAPER: i32 = 1;
+const SCISSORS: i32 = 2;
+
+fn abc_to_rps_i(i: &str) -> i32 {
+    return match i {
+        "A" => ROCK,
+        "B" => PAPER,
+        "C" => SCISSORS,
+        _ => 999999999,
+    };
+}
+
+fn xyz_to_rps_i(i: &str) -> i32 {
+    return match i {
+        "X" => ROCK,
+        "Y" => PAPER,
+        "Z" => SCISSORS,
+        _ => 999999,
+    };
+}
+
+// mod is a reserved word, mod_o for modulus operator
+fn mod_o(a: i32, b: i32) -> i32 {
+    // % is actually the remainder function, not the modulus function
+    // This is the workaround way to "fix" this.
+    return ((a % b) + b) % b;
+}
+
+fn xyz_to_rps_i_b(a: i32, i: &str) -> i32 {
+    return (match i {
+        // Losing: All loses are you being one less than the opponent, looping back to 2 when a = 0.
+        "X" => mod_o(a - 1, 3),
+        // Tie: Return same value
+        "Y" => a,
+        // Winning: All wins are you being one ahead of the opponent, looping back to 0 when a = 2.
+        "Z" => mod_o(a + 1, 3),
+        _ => 99999,
+    }) % 3;
+}
+
+fn get_round_value(opponent: i32, you: i32) -> i32 {
+    // (you - opponent + 1) % 3 gets 0 on loss, 1 on tie, 2 on win
+    // multiply by 3 gets points.
+    let match_points = mod_o(you - opponent + 1, 3) * 3;
+    // you + 1 = correct points
+    return match_points + you + 1;
+}
+
+fn parse_line_puzzle_1_sol2(s: &String) -> (i32, i32) {
+    let mut split_value = s.split_whitespace();
+    let first = abc_to_rps_i(split_value.next().unwrap_or(""));
+    let second = xyz_to_rps_i(split_value.next().unwrap_or(""));
+    return (first, second);
+}
+
+fn parse_line_puzzle_2_sol2(s: &String) -> (i32, i32) {
+    let mut split_value = s.split_whitespace();
+    let first = abc_to_rps_i(split_value.next().unwrap_or(""));
+    let second = xyz_to_rps_i_b(first, split_value.next().unwrap_or(""));
+    return (first, second);
+}
+
+/// Get the score for the puzzle
+/// ```
+/// let vec1: Vec<String> = vec!["A Y", "B X", "C Z"].iter().map(|s| s.to_string()).collect();
+/// assert_eq!(day02::puzzle_a_sol2(&vec1), 15);
+/// ```
+pub fn puzzle_a_sol2(raw_matches: &Vec<String>) -> i32 {
+    return raw_matches
+        .iter()
+        .map(|s| parse_line_puzzle_1_sol2(s))
+        .map(|(a, b)| get_round_value(a, b))
+        .sum();
+}
+
+/// Get the score for the puzzle
+/// ```
+/// let vec1: Vec<String> = vec!["A Y", "B X", "C Z"].iter().map(|s| s.to_string()).collect();
+/// assert_eq!(day02::puzzle_b_sol2(&vec1), 12);
+/// ```
+pub fn puzzle_b_sol2(raw_matches: &Vec<String>) -> i32 {
+    return raw_matches
+        .iter()
+        .map(|s| parse_line_puzzle_2_sol2(s))
+        .map(|(a, b)| get_round_value(a, b))
+        .sum();
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
 
+    // Logic solution unit tests
     #[test]
     fn test_parse_input_1() {
         let vec1: Vec<String> = vec!["A Y", "B X", "C Z"]
@@ -152,5 +244,30 @@ mod tests {
             (RockPaperScissors::Scissors, RockPaperScissors::Rock),
         ];
         assert_eq!(parse_input_puzzle_2(&vec1), vec2);
+    }
+
+    // Alternative solution unit tests
+    #[test]
+    fn test_parse_line_puzzle_2_sol2_first_line() {
+        let s = "A Y".to_string();
+        assert_eq!(parse_line_puzzle_2_sol2(&s), (ROCK, ROCK));
+    }
+
+    #[test]
+    fn test_parse_line_puzzle_2_sol2_second_line() {
+        let s = "B X".to_string();
+        assert_eq!(parse_line_puzzle_2_sol2(&s), (PAPER, ROCK));
+    }
+
+    #[test]
+    fn test_parse_line_puzzle_2_sol2_third_line() {
+        let s = "C Z".to_string();
+        assert_eq!(parse_line_puzzle_2_sol2(&s), (SCISSORS, ROCK));
+    }
+
+    #[test]
+    fn test_parse_line_puzzle_2_sol2_rock_lose() {
+        let s = "A X".to_string();
+        assert_eq!(parse_line_puzzle_2_sol2(&s), (ROCK, SCISSORS));
     }
 }
