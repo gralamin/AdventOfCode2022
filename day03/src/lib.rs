@@ -27,5 +27,7 @@ mod tests {
     #[test]
     fn test_example() {
         assert_eq!(1, 1);
+        assert_eq!(puzzle_a(&vec!["".to_string()]), 1);
+        assert_eq!(puzzle_b(&vec!["".to_string()]), 2);
     }
 }
