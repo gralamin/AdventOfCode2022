@@ -5,7 +5,7 @@ Advent of Code for 2022 - https://adventofcode.com/2022
 
 Per day, remember to:
 ```
-export day=day01
+export day=day03
 cargo new $day
 cp day01/Makefile $day/
 touch $day/README.md
