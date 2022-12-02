@@ -35,7 +35,7 @@ pub fn load_as_ints(filename: &str) -> Vec<i32> {
 ///
 /// This removes any empty groups.
 /// ```
-/// let ins = "7,4,9,5,11,17,23,2,0,14,21,24,10,16,13,6,15,25,12,22,18,20,8,19,3,26,1\n\n22 13 17 11  0\n 8  2 23  4 24\n21  9 14 16  7\n 6 10  3 18  5\n 1 12 20 15 19\n\n 3 15  0  2 22\n 9 18 13 17  5\n19  8  7 25 23\n20 11 10 24  4\n14 21 16 12  6\n\n\n14 21 17 24  4\n10 16 15  9 19\n18  8 23 26 20\n22 11 13  6  5\n 2  0 12  3  7";
+/// let ins = "7,4,9,5,11,17,23,2,0,14,21,24,10,16,13,6,15,25,12,22,18,20,8,19,3,26,1\n\n22 13 17 11  0\n 8  2 23  4 24\n21  9 14 16  7\n 6 10  3 18  5\n 1 12 20 15 19\n\n 3 15  0  2 22\n 9 18 13 17  5\n19  8  7 25 23\n20 11 10 24  4\n14 21 16 12  6\n\n\n14 21 17 24  4\n10 16 15  9 19\n18  8 23 26 20\n22 11 13  6  5\n 2  0 12  3  7\n\n";
 /// let outs = vec![
 ///    vec!["7,4,9,5,11,17,23,2,0,14,21,24,10,16,13,6,15,25,12,22,18,20,8,19,3,26,1".to_string()],
 ///    vec!["22 13 17 11  0", " 8  2 23  4 24", "21  9 14 16  7", " 6 10  3 18  5", " 1 12 20 15 19"].iter().map(|s| s.to_string()).collect(),
@@ -91,6 +91,10 @@ pub fn parse_csv_i32_lines(lines: Vec<Vec<String>>) -> Vec<i32> {
 /// Parses a line of the form "x1,y1 -> x2,y2"
 ///
 /// Extracts the numbers so this can be used a simple line.
+/// ```
+/// let input = "1,2 -> 3,-4";
+/// assert_eq!(filelib::parse_line_to_linecoords(input), (1, 2, 3, -4));
+/// ```
 pub fn parse_line_to_linecoords(line: &str) -> (i32, i32, i32, i32) {
     let vec_version: Vec<Vec<i32>> = line
         .split("->")
