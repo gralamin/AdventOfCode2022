@@ -1,4 +1,5 @@
 extern crate filelib;
+extern crate mathlib;
 
 pub use filelib::load_no_blanks;
 
@@ -146,21 +147,14 @@ fn xyz_to_rps_i(i: &str) -> i32 {
     };
 }
 
-// mod is a reserved word, mod_o for modulus operator
-fn mod_o(a: i32, b: i32) -> i32 {
-    // % is actually the remainder function, not the modulus function
-    // This is the workaround way to "fix" this.
-    return ((a % b) + b) % b;
-}
-
 fn xyz_to_rps_i_b(a: i32, i: &str) -> i32 {
     return (match i {
         // Losing: All loses are you being one less than the opponent, looping back to 2 when a = 0.
-        "X" => mod_o(a - 1, 3),
+        "X" => mathlib::modulus(a - 1, 3),
         // Tie: Return same value
         "Y" => a,
         // Winning: All wins are you being one ahead of the opponent, looping back to 0 when a = 2.
-        "Z" => mod_o(a + 1, 3),
+        "Z" => mathlib::modulus(a + 1, 3),
         _ => 99999,
     }) % 3;
 }
@@ -168,7 +162,7 @@ fn xyz_to_rps_i_b(a: i32, i: &str) -> i32 {
 fn get_round_value(opponent: i32, you: i32) -> i32 {
     // (you - opponent + 1) % 3 gets 0 on loss, 1 on tie, 2 on win
     // multiply by 3 gets points.
-    let match_points = mod_o(you - opponent + 1, 3) * 3;
+    let match_points = mathlib::modulus(you - opponent + 1, 3) * 3;
     // you + 1 = correct points
     return match_points + you + 1;
 }
