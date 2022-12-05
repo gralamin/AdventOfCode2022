@@ -5,7 +5,7 @@ pub use filelib::load_no_blanks;
 /// Solution to puzzle_a entry point
 /// ```
 /// let vec1: Vec<String> = vec!["A Y", "B X", "C Z"].iter().map(|s| s.to_string()).collect();
-/// assert_eq!(day06::puzzle_a(&vec1), 1);
+/// assert_eq!(day07::puzzle_a(&vec1), 1);
 /// ```
 pub fn puzzle_a(_input: &Vec<String>) -> i32 {
     return 1;
@@ -14,7 +14,7 @@ pub fn puzzle_a(_input: &Vec<String>) -> i32 {
 /// Solution to puzzle_b entry point
 /// ```
 /// let vec1: Vec<String> = vec!["A Y", "B X", "C Z"].iter().map(|s| s.to_string()).collect();
-/// assert_eq!(day06::puzzle_b(&vec1), 2);
+/// assert_eq!(day07::puzzle_b(&vec1), 2);
 /// ```
 pub fn puzzle_b(_input: &Vec<String>) -> i32 {
     return 2;
