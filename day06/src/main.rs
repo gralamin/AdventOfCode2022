@@ -1,14 +1,14 @@
-use day06::load_no_blanks;
+use day06::load;
 use day06::puzzle_a;
 use day06::puzzle_b;
 
 fn main() {
     let filename = "input";
-    let template = load_no_blanks(filename);
+    let buffer = load(filename);
 
-    let value = puzzle_a(&template);
+    let value = puzzle_a(&buffer);
     println!("Answer to 1st question: {}", value);
 
-    let value_b = puzzle_b(&template);
+    let value_b = puzzle_b(&buffer);
     println!("Answer to 2nd question: {}", value_b);
 }
