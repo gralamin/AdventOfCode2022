@@ -1,6 +1,9 @@
 extern crate filelib;
+extern crate gridlib;
 
 pub use filelib::load_no_blanks;
+
+use crate::gridlib::GridTraversable;
 
 fn char_to_u8(c: char) -> u8 {
     return match c {
@@ -18,123 +21,56 @@ fn char_to_u8(c: char) -> u8 {
     };
 }
 
-fn parse_input(input: &Vec<String>) -> Vec<Vec<u8>> {
-    return input
+fn parse_input(input: &Vec<String>) -> gridlib::Grid<u8> {
+    let values: Vec<u8> = input
         .iter()
-        .map(|line| line.chars().map(|n| char_to_u8(n)).collect())
+        .map(|line| parse_line(line))
+        .flatten()
         .collect();
+    return gridlib::Grid::new(input[0].len(), input.len(), values);
 }
 
-fn get_left_index(x: usize, _y: usize) -> Option<usize> {
-    if x <= 0 {
-        return None;
-    }
-    return Some(x - 1);
+fn parse_line(line: &str) -> Vec<u8> {
+    return line.chars().map(|n| char_to_u8(n)).collect();
 }
 
-fn get_up_index(_x: usize, y: usize) -> Option<usize> {
-    if y <= 0 {
-        return None;
-    }
-    return Some(y - 1);
-}
-
-fn get_right_index(x: usize, _y: usize, width: usize) -> Option<usize> {
-    if x >= width - 1 {
-        return None;
-    }
-    return Some(x + 1);
-}
-
-fn get_down_index(_x: usize, y: usize, height: usize) -> Option<usize> {
-    if y >= height - 1 {
-        return None;
-    }
-    return Some(y + 1);
-}
-
-fn is_visible(x: usize, y: usize, map: &Vec<Vec<u8>>) -> bool {
-    let height = map.len();
-    let width = map[0].len();
-    if x == 0 || y == 0 || x == width - 1 || y == height - 1 {
+fn is_visible(coord: gridlib::GridCoordinate, map: &gridlib::Grid<u8>) -> bool {
+    let height = map.get_height();
+    let width = map.get_width();
+    if coord.x == 0 || coord.y == 0 || coord.x == width - 1 || coord.y == height - 1 {
         return true;
     }
-    let value = map[y][x];
+    let value = map.get_value(coord).unwrap();
 
-    // Check left
-    let mut last_x = x;
-    let mut last_y = y;
-    let mut visible_left = true;
-    let mut index: Option<usize>;
-    loop {
-        index = get_left_index(last_x, last_y);
-        match index {
-            Some(i) => last_x = i,
-            None => break,
-        };
-        if map[last_y][last_x] >= value {
-            visible_left = false;
-            break;
+    // Check direction
+    let mut last: gridlib::GridCoordinate;
+    let mut visible;
+    let mut index: Option<gridlib::GridCoordinate>;
+    for dir in vec![
+        gridlib::Direction::NORTH,
+        gridlib::Direction::EAST,
+        gridlib::Direction::SOUTH,
+        gridlib::Direction::WEST,
+    ] {
+        last = coord;
+        visible = true;
+        loop {
+            index = map.get_coordinate_by_direction(last, dir);
+            match index {
+                Some(i) => last = i,
+                None => break,
+            };
+            let cur_value = map.get_value(last).unwrap();
+            if cur_value >= value {
+                visible = false;
+                break;
+            }
+        }
+        if visible {
+            return true;
         }
     }
-    if visible_left {
-        return true;
-    }
-
-    // Check up
-    last_x = x;
-    last_y = y;
-    let mut visible_up = true;
-    loop {
-        index = get_up_index(last_x, last_y);
-        match index {
-            Some(i) => last_y = i,
-            None => break,
-        };
-        if map[last_y][last_x] >= value {
-            visible_up = false;
-            break;
-        }
-    }
-    if visible_up {
-        return true;
-    }
-
-    // Check right
-    last_x = x;
-    last_y = y;
-    let mut visible_right = true;
-    loop {
-        index = get_right_index(last_x, last_y, width);
-        match index {
-            Some(i) => last_x = i,
-            None => break,
-        };
-        if map[last_y][last_x] >= value {
-            visible_right = false;
-            break;
-        }
-    }
-    if visible_right {
-        return true;
-    }
-
-    // Check down
-    last_x = x;
-    last_y = y;
-    let mut visible_down = true;
-    loop {
-        index = get_down_index(last_x, last_y, height);
-        match index {
-            Some(i) => last_y = i,
-            None => break,
-        };
-        if map[last_y][last_x] >= value {
-            visible_down = false;
-            break;
-        }
-    }
-    return visible_down;
+    return false;
 }
 
 /// Solution to puzzle_a entry point
@@ -144,97 +80,44 @@ fn is_visible(x: usize, y: usize, map: &Vec<Vec<u8>>) -> bool {
 /// ```
 pub fn puzzle_a(input: &Vec<String>) -> usize {
     let map = parse_input(input);
-    let height = map.len();
-    let width = map[0].len();
-    let mut num = 0;
-    for y in 0..height {
-        for x in 0..width {
-            if is_visible(x, y, &map) {
-                num += 1;
-            }
-        }
-    }
-    return num;
+    return map.coord_iter().filter(|&c| is_visible(c, &map)).count();
 }
 
-fn get_score(x: usize, y: usize, map: &Vec<Vec<u8>>) -> usize {
-    let height = map.len();
-    let width = map[0].len();
+fn get_score(coord: gridlib::GridCoordinate, map: &gridlib::Grid<u8>) -> usize {
+    let height = map.get_height();
+    let width = map.get_width();
     let mut score = 1;
-    // Anything on the edge will be 0
-    if x == 0 || y == 0 || x == width - 1 || y == height - 1 {
+    if coord.x == 0 || coord.y == 0 || coord.x == width - 1 || coord.y == height - 1 {
         return 0;
     }
-    let value = map[y][x];
+    let value = map.get_value(coord).unwrap();
 
-    // Check left
-    let mut last_x = x;
-    let mut last_y = y;
-    let mut index: Option<usize>;
-    let mut num = 0;
-    loop {
-        index = get_left_index(last_x, last_y);
-        match index {
-            Some(i) => last_x = i,
-            None => break,
-        };
-        num += 1;
-        if map[last_y][last_x] >= value {
-            break;
+    // Check direction
+    let mut last: gridlib::GridCoordinate;
+    let mut num;
+    let mut index: Option<gridlib::GridCoordinate>;
+    for dir in vec![
+        gridlib::Direction::NORTH,
+        gridlib::Direction::EAST,
+        gridlib::Direction::SOUTH,
+        gridlib::Direction::WEST,
+    ] {
+        last = coord;
+        num = 0;
+        loop {
+            index = map.get_coordinate_by_direction(last, dir);
+            match index {
+                Some(i) => last = i,
+                None => break,
+            };
+            num += 1;
+            if map.get_value(last).unwrap() >= value {
+                break;
+            }
         }
+        score *= num;
     }
-    score *= num;
-
-    // Check up
-    last_x = x;
-    last_y = y;
-    num = 0;
-    loop {
-        index = get_up_index(last_x, last_y);
-        match index {
-            Some(i) => last_y = i,
-            None => break,
-        };
-        num += 1;
-        if map[last_y][last_x] >= value {
-            break;
-        }
-    }
-    score *= num;
-
-    // Check right
-    last_x = x;
-    last_y = y;
-    num = 0;
-    loop {
-        index = get_right_index(last_x, last_y, width);
-        match index {
-            Some(i) => last_x = i,
-            None => break,
-        };
-        num += 1;
-        if map[last_y][last_x] >= value {
-            break;
-        }
-    }
-    score *= num;
-
-    // Check down
-    last_x = x;
-    last_y = y;
-    num = 0;
-    loop {
-        index = get_down_index(last_x, last_y, height);
-        match index {
-            Some(i) => last_y = i,
-            None => break,
-        };
-        num += 1;
-        if map[last_y][last_x] >= value {
-            break;
-        }
-    }
-    return score * num;
+    return score;
 }
 
 /// Solution to puzzle_b entry point
@@ -244,15 +127,7 @@ fn get_score(x: usize, y: usize, map: &Vec<Vec<u8>>) -> usize {
 /// ```
 pub fn puzzle_b(input: &Vec<String>) -> usize {
     let map = parse_input(input);
-    let height = map.len();
-    let width = map[0].len();
-    let mut scores: Vec<usize> = vec![];
-    for y in 0..height {
-        for x in 0..width {
-            scores.push(get_score(x, y, &map));
-        }
-    }
-    return *scores.iter().max().unwrap();
+    return map.coord_iter().map(|c| get_score(c, &map)).max().unwrap();
 }
 
 #[cfg(test)]
@@ -265,13 +140,13 @@ mod tests {
             .iter()
             .map(|s| s.to_string())
             .collect();
-        let expected: Vec<Vec<u8>> = vec![
-            vec![3, 0, 3, 7, 3],
-            vec![2, 5, 5, 1, 2],
-            vec![6, 5, 3, 3, 2],
-            vec![3, 3, 5, 4, 9],
-            vec![3, 5, 3, 9, 0],
-        ];
-        assert_eq!(parse_input(&input), expected);
+        let expected: gridlib::Grid<u8> = gridlib::Grid::new(
+            5,
+            5,
+            vec![
+                3, 0, 3, 7, 3, 2, 5, 5, 1, 2, 6, 5, 3, 3, 2, 3, 3, 5, 4, 9, 3, 5, 3, 9, 0,
+            ],
+        );
+        assert_eq!(parse_input(&input).data_copy(), expected.data_copy());
     }
 }
