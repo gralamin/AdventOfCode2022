@@ -7,3 +7,4 @@ edition = "2021"
 
 [dependencies]
 filelib = { path = "../filelib" }
+gridlib = { path = "../gridlib" }
