@@ -84,27 +84,23 @@ impl State {
     }
 
     pub fn do_op(&mut self, op: Operation, v: i32) {
+        let sprite_radius: i32 = self.sprite_pixels_adjacent.try_into().unwrap();
+        let width: i32 = self.screen_state.get_width().try_into().unwrap();
+
         let mut cycles = op.get_clock_cycles();
         while cycles > 0 {
-            let min: usize;
-            let max: usize;
+            let clocki32: i32 = self.clock.try_into().unwrap();
+            let col: i32 = (clocki32 - 1) % width;
+            let min = self.x - sprite_radius;
+            let max = self.x + sprite_radius;
             //println!("c: {}, x: {}", self.clock, self.x);
-            if self.x >= 0 {
-                let ux: usize = self.x.try_into().unwrap();
-                if self.x >= 1 {
-                    min = ux - self.sprite_pixels_adjacent;
-                } else {
-                    min = 0;
-                }
-                max = ux + self.sprite_pixels_adjacent;
-                //println!("min: {}, max: {}", min, max);
-                let coordinate_x = (self.clock - 1) % self.screen_state.get_width();
-                let coordinate_y = (self.clock - 1) / self.screen_state.get_width();
-                let coordinate = GridCoordinate::new(coordinate_x, coordinate_y);
-                let value = coordinate_x >= min && coordinate_x <= max;
-                //println!("Storing {} to {}", value, coordinate);
-                self.screen_state.set_value(coordinate, value);
-            }
+            //println!("min: {}, max: {}", min, max);
+            let coordinate_x = (self.clock - 1) % self.screen_state.get_width();
+            let coordinate_y = (self.clock - 1) / self.screen_state.get_width();
+            let coordinate = GridCoordinate::new(coordinate_x, coordinate_y);
+            let value = col >= min && col <= max;
+            //println!("Storing {} to {}", value, coordinate);
+            self.screen_state.set_value(coordinate, value);
 
             cycles -= 1;
             self.clock += 1;
