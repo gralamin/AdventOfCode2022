@@ -1,3 +1,4 @@
+use std::cmp::Ordering;
 use std::fmt::{Display, Formatter};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -26,6 +27,18 @@ impl std::ops::Add for GridCoordinate {
             x: self.x + other.x,
             y: self.y + other.y,
         };
+    }
+}
+
+impl Ord for GridCoordinate {
+    fn cmp(&self, other: &Self) -> Ordering {
+        return other.x.cmp(&self.x).then_with(|| other.y.cmp(&self.y));
+    }
+}
+
+impl PartialOrd for GridCoordinate {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        return Some(self.cmp(other));
     }
 }
 
