@@ -135,6 +135,52 @@ pub fn puzzle_a(input: &Vec<String>) -> usize {
     return pathfind_djikstra(&puzzle, start, end);
 }
 
+fn floodfill_djikstra(grid: &Grid<u8>, from: GridCoordinate, end_at_value: u8) -> usize {
+    // This is just a BFS, really
+    let mut dist = vec![i32::MAX; grid.get_height() * grid.get_width()];
+    let mut queue = BinaryHeap::new();
+    queue.push(QueueState {
+        cost: 0,
+        position: from,
+    });
+    dist[from.y * grid.get_width() + from.x] = 0;
+
+    //println!("Determining path from {}, to height {}", from, end_at_value);
+
+    while let Some(QueueState { cost, position }) = queue.pop() {
+        let cur_height = grid.get_value(position).unwrap();
+        if cur_height == end_at_value {
+            return cost.try_into().unwrap();
+        }
+
+        if cost > dist[position.y * grid.get_width() + position.x] {
+            continue;
+        }
+
+        for possible_pos in grid.get_adjacent_coordinates(position) {
+            let possible_height = grid.get_value(possible_pos).unwrap();
+            if cur_height > possible_height + 1 {
+                continue;
+            }
+
+            // Not too high, add it, if we don't have a better path here
+            let next = QueueState {
+                cost: cost + 1,
+                position: possible_pos,
+            };
+            let next_index = possible_pos.y * grid.get_width() + possible_pos.x;
+            if next.cost < dist[next_index] {
+                //println!("Found path from {} to {}, cost: {}", position, possible_pos, next.cost);
+                //println!("  - height {} vs height {}", cur_height as char, possible_height as char);
+                queue.push(next);
+                dist[next_index] = next.cost;
+            }
+        }
+    }
+
+    return 9999999;
+}
+
 /// Solution to puzzle_b entry point
 /// ```
 /// let vec1: Vec<String> = day12::example_map();
@@ -142,21 +188,7 @@ pub fn puzzle_a(input: &Vec<String>) -> usize {
 /// ```
 pub fn puzzle_b(input: &Vec<String>) -> usize {
     let (puzzle, _, end) = parse_input(input);
-    let mut starts = vec![];
-    for y in 0..puzzle.get_height() {
-        for x in 0..puzzle.get_width() {
-            let coordinate = GridCoordinate::new(x, y);
-            let v = puzzle.get_value(coordinate).unwrap();
-            if v == LOWEST_ELEVATION {
-                starts.push(coordinate);
-            }
-        }
-    }
-    return starts
-        .iter()
-        .map(|s| pathfind_djikstra(&puzzle, *s, end))
-        .min()
-        .unwrap();
+    return floodfill_djikstra(&puzzle, end, START_ELEVATION);
 }
 
 #[cfg(test)]
