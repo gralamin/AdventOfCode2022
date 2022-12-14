@@ -108,6 +108,23 @@ pub fn parse_line_to_linecoords(line: &str) -> (i32, i32, i32, i32) {
     return (vec_flat[0], vec_flat[1], vec_flat[2], vec_flat[3]);
 }
 
+/// Parses a path of the form "x1,y1 -> x2,y2 -> x3,y3" (etc)
+///
+/// ```
+/// let input = "1,2 -> 3,-4 -> 5,6 -> 1,2";
+/// assert_eq!(filelib::parse_path_to_coords(input), vec![(1,2), (3,-4), (5, 6), (1, 2)]);
+/// ```
+pub fn parse_path_to_coords(line: &str) -> Vec<(i32, i32)> {
+    let vec_version: Vec<(i32, i32)> = line
+        .split("->")
+        .map(|pair| {
+            let (x, y) = pair.split_once(",").unwrap();
+            return (x.trim().parse::<i32>().unwrap(), y.trim().parse::<i32>().unwrap());
+        })
+        .collect();
+    return vec_version;
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
