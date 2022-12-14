@@ -119,7 +119,10 @@ pub fn parse_path_to_coords(line: &str) -> Vec<(i32, i32)> {
         .split("->")
         .map(|pair| {
             let (x, y) = pair.split_once(",").unwrap();
-            return (x.trim().parse::<i32>().unwrap(), y.trim().parse::<i32>().unwrap());
+            return (
+                x.trim().parse::<i32>().unwrap(),
+                y.trim().parse::<i32>().unwrap(),
+            );
         })
         .collect();
     return vec_version;

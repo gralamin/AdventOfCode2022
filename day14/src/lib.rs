@@ -4,7 +4,10 @@ pub use filelib::load_no_blanks;
 use filelib::parse_path_to_coords;
 
 fn parse_input(input: &Vec<String>) -> Vec<Vec<(i32, i32)>> {
-    return input.iter().map(|line| parse_path_to_coords(line)).collect();
+    return input
+        .iter()
+        .map(|line| parse_path_to_coords(line))
+        .collect();
 }
 
 fn move_sand(paths: &Vec<Vec<(i32, i32)>>, sand_x: i32, sand_y: i32) -> (i32, i32, bool) {
@@ -12,7 +15,7 @@ fn move_sand(paths: &Vec<Vec<(i32, i32)>>, sand_x: i32, sand_y: i32) -> (i32, i3
     if try_move_down(paths, sand_x, sand_y) {
         return (sand_x, sand_y + 1, false);
     }
-    
+
     for (x, y) in vec![(sand_x - 1, sand_y + 1), (sand_x + 1, sand_y + 1)] {
         if try_diagonal_point(paths, x, y) {
             return (x, y, false);
@@ -86,7 +89,12 @@ fn try_diagonal_point(paths: &Vec<Vec<(i32, i32)>>, sand_x: i32, sand_y: i32) ->
 
 fn below_all_paths(paths: &Vec<Vec<(i32, i32)>>) -> i32 {
     // Get the y such that we can assume that we are past all the points
-    return paths.iter().map(|path| path.iter().map(|(_, y)| y).max().unwrap()).max().unwrap() + 1;
+    return paths
+        .iter()
+        .map(|path| path.iter().map(|(_, y)| y).max().unwrap())
+        .max()
+        .unwrap()
+        + 1;
 }
 
 /// Solution to puzzle_a entry point
@@ -104,7 +112,7 @@ pub fn puzzle_a(input: &Vec<String>) -> usize {
     let mut current_x = sand_start_x;
     let mut current_y = sand_start_y;
     let mut at_rest = false;
-    
+
     loop {
         //println!("Sand is at: ({}, {})", current_x, current_y);
         if current_y >= abyss_y {
@@ -121,7 +129,6 @@ pub fn puzzle_a(input: &Vec<String>) -> usize {
         } else {
             (current_x, current_y, at_rest) = move_sand(&paths, current_x, current_y);
         }
-
     }
 
     return num_sand;
@@ -144,7 +151,7 @@ pub fn puzzle_b(input: &Vec<String>) -> usize {
     let mut current_x = sand_start_x;
     let mut current_y = sand_start_y;
     let mut at_rest = false;
-    
+
     loop {
         //println!("Sand is at: ({}, {})", current_x, current_y);
         if at_rest {
