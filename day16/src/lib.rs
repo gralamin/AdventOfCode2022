@@ -47,7 +47,7 @@ fn solve(valves: &mut Vec<(&str, usize, Vec<&str>)>, max_time: usize, start: &st
         .collect::<FxHashMap<_, _>>();
     let num_positive_flow_rate = valves.iter().filter(|v| v.1 > 0).count();
     let num_valves = valves.len();
-    
+
     // adjacency map
     let mut adj = vec![vec![0usize; 0]; num_valves];
     let mut flow = vec![0usize; num_valves];
@@ -69,7 +69,10 @@ fn solve(valves: &mut Vec<(&str, usize, Vec<&str>)>, max_time: usize, start: &st
             for x in 0..positive_bitset {
                 let mut o = opt[x][valve_index][time];
                 if cur_bitmask & x != 0 && time >= 2 {
-                    o = o.max(opt[x - cur_bitmask][valve_index][time - 1] + flow[valve_index] * time as usize);
+                    o = o.max(
+                        opt[x - cur_bitmask][valve_index][time - 1]
+                            + flow[valve_index] * time as usize,
+                    );
                 }
                 for &j in adj[valve_index].iter() {
                     o = o.max(opt[x][j][time - 1]);
@@ -81,7 +84,6 @@ fn solve(valves: &mut Vec<(&str, usize, Vec<&str>)>, max_time: usize, start: &st
 
     return opt[positive_bitset - 1][start_index][max_time - 1];
 }
-
 
 /// Solution to puzzle_a entry point
 /// ```
@@ -95,7 +97,11 @@ pub fn puzzle_a(input: &Vec<String>) -> usize {
     return solve(&mut valves, max_time, start);
 }
 
-fn solve_elephant(valves: &mut Vec<(&str, usize, Vec<&str>)>, max_time: usize, start: &str) -> usize {
+fn solve_elephant(
+    valves: &mut Vec<(&str, usize, Vec<&str>)>,
+    max_time: usize,
+    start: &str,
+) -> usize {
     let elephant_time = 4;
     valves.sort_by(|a, b| b.1.cmp(&a.1));
     let label_indexes = valves
@@ -105,7 +111,7 @@ fn solve_elephant(valves: &mut Vec<(&str, usize, Vec<&str>)>, max_time: usize, s
         .collect::<FxHashMap<_, _>>();
     let num_positive_flow_rate = valves.iter().filter(|v| v.1 > 0).count();
     let num_valves = valves.len();
-    
+
     // adjacency map
     let mut adj = vec![vec![0usize; 0]; num_valves];
     let mut flow = vec![0usize; num_valves];
@@ -127,7 +133,10 @@ fn solve_elephant(valves: &mut Vec<(&str, usize, Vec<&str>)>, max_time: usize, s
             for x in 0..positive_bitset {
                 let mut o = opt[x][valve_index][time];
                 if cur_bitmask & x != 0 && time >= 2 {
-                    o = o.max(opt[x - cur_bitmask][valve_index][time - 1] + flow[valve_index] * time as usize);
+                    o = o.max(
+                        opt[x - cur_bitmask][valve_index][time - 1]
+                            + flow[valve_index] * time as usize,
+                    );
                 }
                 for &j in adj[valve_index].iter() {
                     o = o.max(opt[x][j][time - 1]);
@@ -146,7 +155,6 @@ fn solve_elephant(valves: &mut Vec<(&str, usize, Vec<&str>)>, max_time: usize, s
     }
     return best;
 }
-
 
 /// Solution to puzzle_b entry point
 /// ```
