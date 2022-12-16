@@ -63,21 +63,28 @@ fn solve(valves: &mut Vec<(&str, usize, Vec<&str>)>, max_time: usize, start: &st
 
     // dynamic programming, via 3 dimensional array [time left, current node, bitset of available valves]
     let mut opt = vec![vec![vec![0; max_time]; num_valves]; positive_bitset];
+    // For every time
     for time in 1..max_time {
+        // For every possible valve
         for valve_index in 0..num_valves {
             let cur_bitmask = 1 << valve_index;
-            for x in 0..positive_bitset {
-                let mut o = opt[x][valve_index][time];
-                if cur_bitmask & x != 0 && time >= 2 {
+            // In every possible state
+            for possible_bitmask in 0..positive_bitset {
+                // 0 if we haven't been here before.
+                let mut o = opt[possible_bitmask][valve_index][time];
+                // if the current state for this bitmask is off and we have the time, try turning this on.
+                if cur_bitmask & possible_bitmask != 0 && time >= 1 {
                     o = o.max(
-                        opt[x - cur_bitmask][valve_index][time - 1]
+                        opt[possible_bitmask - cur_bitmask][valve_index][time - 1]
                             + flow[valve_index] * time as usize,
                     );
                 }
+                // Try also instead going to any other valve via the edges.
                 for &j in adj[valve_index].iter() {
-                    o = o.max(opt[x][j][time - 1]);
+                    o = o.max(opt[possible_bitmask][j][time - 1]);
                 }
-                opt[x][valve_index][time] = o;
+                // The highest value is stored for dynamic programming.
+                opt[possible_bitmask][valve_index][time] = o;
             }
         }
     }
@@ -102,7 +109,11 @@ fn solve_elephant(
     max_time: usize,
     start: &str,
 ) -> usize {
+    // refer to solve for most of the logic
     let elephant_time = 4;
+    // The max time with the elephant
+    let effective_max_time = max_time - elephant_time;
+
     valves.sort_by(|a, b| b.1.cmp(&a.1));
     let label_indexes = valves
         .iter()
@@ -126,13 +137,13 @@ fn solve_elephant(
     let positive_bitset = 1 << num_positive_flow_rate;
 
     // dynamic programming, via 3 dimensional array [time left, current node, bitset of available valves]
-    let mut opt = vec![vec![vec![0; max_time]; num_valves]; positive_bitset];
-    for time in 1..max_time {
+    let mut opt = vec![vec![vec![0; effective_max_time]; num_valves]; positive_bitset];
+    for time in 1..effective_max_time {
         for valve_index in 0..num_valves {
             let cur_bitmask = 1 << valve_index;
             for x in 0..positive_bitset {
                 let mut o = opt[x][valve_index][time];
-                if cur_bitmask & x != 0 && time >= 2 {
+                if cur_bitmask & x != 0 && time >= 1 {
                     o = o.max(
                         opt[x - cur_bitmask][valve_index][time - 1]
                             + flow[valve_index] * time as usize,
@@ -146,12 +157,21 @@ fn solve_elephant(
         }
     }
 
+    // Now how do we handle the elephant?
     let mut best = 0;
-    let ret_time = max_time - elephant_time - 1;
-    for x in 0..positive_bitset / 2 {
-        let y = positive_bitset - 1 - x;
-        // split in half, y is elephant, x is you.
-        best = best.max(opt[x][start_index][ret_time] + opt[y][start_index][ret_time]);
+    // Try going through all possible states
+    for x in 0..positive_bitset {
+        // And having the elephant represent the inverse possible state
+        // eg the elephant doesn't do anything you can do
+        for y in 0..x {
+            if (x & y) == 0 {
+                // split in half, y is elephant, x is you.
+                best = best.max(
+                    opt[x][start_index][effective_max_time - 1]
+                        + opt[y][start_index][effective_max_time - 1],
+                );
+            }
+        }
     }
     return best;
 }
@@ -165,7 +185,5 @@ pub fn puzzle_b(input: &Vec<String>) -> usize {
     let max_time = 30;
     let start = "AA";
     let mut valves = parse_input(input);
-    println!("This answer is actually off by 8, but not sure whats wrong.");
-    println!("Need to figure out why");
     return solve_elephant(&mut valves, max_time, start);
 }
