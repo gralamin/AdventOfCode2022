@@ -114,10 +114,6 @@ impl JetStreamPattern {
             curr: 0,
         };
     }
-
-    fn pattern_len(&self) -> usize {
-        return self.pattern.len();
-    }
 }
 
 impl Iterator for JetStreamPattern {
@@ -151,17 +147,8 @@ fn drop_blocks(p: &mut JetStreamPattern, max: usize) -> usize {
     // tallest rock is 4 vertical, so floor can never be more than 4*max
     // Then we spawn 3 above that
 
-    // these are for part b
-    // 1000 skips found to work for the example, but not my output...
-    let skip_deltas = 1000;
-    // Make sure we do all the wind at least twice, to look for weird patterns
-    // in case the wind has a large effect. And at least 10000 times.
-    let num_simu = 10000.max(p.pattern_len() * 2) + skip_deltas;
-    let mut deltas = vec![];
-    let mut prev_height;
-
     let tallest = rocks.get_max_height();
-    let floor_y = max.min(num_simu) * tallest + 3 + 1;
+    let floor_y = max * tallest + 3 + 1;
     let mut cur_spawn;
     let width = 7;
     let start_x = 2;
@@ -181,7 +168,12 @@ fn drop_blocks(p: &mut JetStreamPattern, max: usize) -> usize {
     let fall_trans = ShapeCoord::new(0, 1);
     let mut last_floor = floor_y;
 
-    for _ in 0..max.min(num_simu) {
+    // number to actually do before memoization kicks in.
+    let skip_first = 3000;
+    let mut memo: FxHashMap<(Vec<usize>, usize, usize), usize> = FxHashMap::default();
+    let mut height_at_step = vec![];
+
+    for i in 0..max {
         let cur_rock = rocks.next().unwrap();
         // bottom is 3 above lowest rock / floor.
         //println!("current_height is {}", rocks.get_current_height());
@@ -237,52 +229,38 @@ fn drop_blocks(p: &mut JetStreamPattern, max: usize) -> usize {
             }
             // Loop, next jet and next fall!
         }
-        prev_height = last_floor;
         // determine new spawn point:
         for pos in rock_pos {
             last_floor = last_floor.min(pos.y.try_into().unwrap());
         }
-        deltas.push(prev_height - last_floor);
-    }
+        height_at_step.push(floor_y - last_floor);
 
-    // Part b
-    if max.min(num_simu) != max {
-        // skip the first few deltas to gret rid of the floor effect
-        let mut pattern_len = 0;
-        let pattern_search = &deltas[skip_deltas..];
-        for possible_len in 1..=pattern_search.len() / 2 {
-            let pattern = &pattern_search[0..possible_len];
-            let mut found = true;
-            for i in 0..pattern_search.len() - possible_len {
-                if pattern_search[i + possible_len] != pattern[i % possible_len] {
-                    // not the pattern
-                    found = false;
-                    break;
-                }
+        if i >= skip_first {
+            let peaks: Vec<usize> = (0..width)
+                .map(|x| *state.get(&(x, last_floor)).unwrap_or(&0))
+                .collect();
+            let pattern_n = p.curr;
+            let rock_n = rocks.curr;
+            let key = (peaks, pattern_n, rock_n);
+            if memo.contains_key(&key) {
+                let prev_seen = memo[&key];
+                let highest_then = height_at_step[prev_seen];
+                let height_now = floor_y - last_floor;
+                let height_change = height_now - highest_then;
+                let cycle_size = i - prev_seen;
+                let goal = max - prev_seen;
+                let num_cycles = goal / cycle_size;
+                let left_over = goal % cycle_size;
+                let leftover_height = height_at_step[prev_seen + left_over] - highest_then;
+                // I have an off by one error, that I'm not sure why its there.
+                return highest_then + leftover_height + (num_cycles * height_change) - 1;
             }
-            if found {
-                pattern_len = possible_len;
-                break;
-            }
+            memo.insert(key, i);
         }
-        // We found the pattern! Now to compute the pattern
-        let pattern = &pattern_search[0..pattern_len];
-        let pattern_sum: usize = pattern.iter().sum();
-        // Use an bunch of the recorded deltas to make sure the floor has been accounted for
-        let initial_deltas = &deltas[0..deltas.len() / 4];
-        let initial_sum: usize = initial_deltas.iter().sum();
-
-        let num_patterns = (max - initial_deltas.len()) / pattern.len();
-        let num_leftover = (max - initial_deltas.len()) % pattern.len();
-        let leftover_sum: usize = pattern[0..num_leftover].iter().sum();
-
-        return initial_sum + pattern_sum * num_patterns + leftover_sum;
-        // 1595988538654 is too low...
-    } else {
-        // Simulation done, cur_spawn should be height.
-        //println!("floor: {}, last_floor: {}", floor_y, last_floor);
-        return floor_y - last_floor;
     }
+    // Simulation done, cur_spawn should be height.
+    //println!("floor: {}, last_floor: {}", floor_y, last_floor);
+    return floor_y - last_floor;
 }
 
 /// Solution to puzzle_a entry point
