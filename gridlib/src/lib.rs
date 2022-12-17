@@ -90,6 +90,54 @@ impl std::ops::Add for GridCoordinateInf {
     }
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub struct GridCoordinateInf64 {
+    pub x: i64,
+    pub y: i64,
+}
+
+impl GridCoordinateInf64 {
+    pub fn new(x: i64, y: i64) -> GridCoordinateInf64 {
+        return GridCoordinateInf64 { x: x, y: y };
+    }
+
+    pub fn move_dir(&self, direction: Direction) -> GridCoordinateInf64 {
+        let north_move = GridCoordinateInf64::new(0, -1);
+        let south_move = GridCoordinateInf64::new(0, 1);
+        let west_move = GridCoordinateInf64::new(-1, 0);
+        let east_move = GridCoordinateInf64::new(1, 0);
+
+        return *self
+            + match direction {
+                Direction::NORTH => north_move,
+                Direction::EAST => east_move,
+                Direction::SOUTH => south_move,
+                Direction::WEST => west_move,
+                Direction::NORTHEAST => north_move + east_move,
+                Direction::NORTHWEST => north_move + west_move,
+                Direction::SOUTHEAST => south_move + east_move,
+                Direction::SOUTHWEST => south_move + west_move,
+            };
+    }
+}
+
+impl Display for GridCoordinateInf64 {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        return write!(f, "({}, {})", self.x, self.y);
+    }
+}
+
+impl std::ops::Add for GridCoordinateInf64 {
+    type Output = GridCoordinateInf64;
+
+    fn add(self, other: GridCoordinateInf64) -> GridCoordinateInf64 {
+        return GridCoordinateInf64 {
+            x: self.x + other.x,
+            y: self.y + other.y,
+        };
+    }
+}
+
 #[derive(Debug)]
 pub struct Grid<T: Copy> {
     /* Variable sized Grid.
@@ -454,5 +502,26 @@ mod tests {
         assert_eq!(cur, GridCoordinateInf::new(1, -1));
         cur = cur.move_dir(Direction::SOUTHWEST);
         assert_eq!(cur, GridCoordinateInf::new(0, 0));
+    }
+
+    #[test]
+    fn test_move_on_infinite_grid64() {
+        let start = GridCoordinateInf64::new(0, 0);
+        let mut cur = start.move_dir(Direction::NORTH);
+        assert_eq!(cur, GridCoordinateInf64::new(0, -1));
+        cur = cur.move_dir(Direction::WEST);
+        assert_eq!(cur, GridCoordinateInf64::new(-1, -1));
+        cur = cur.move_dir(Direction::NORTHWEST);
+        assert_eq!(cur, GridCoordinateInf64::new(-2, -2));
+        cur = cur.move_dir(Direction::NORTHEAST);
+        assert_eq!(cur, GridCoordinateInf64::new(-1, -3));
+        cur = cur.move_dir(Direction::EAST);
+        assert_eq!(cur, GridCoordinateInf64::new(-0, -3));
+        cur = cur.move_dir(Direction::SOUTH);
+        assert_eq!(cur, GridCoordinateInf64::new(0, -2));
+        cur = cur.move_dir(Direction::SOUTHEAST);
+        assert_eq!(cur, GridCoordinateInf64::new(1, -1));
+        cur = cur.move_dir(Direction::SOUTHWEST);
+        assert_eq!(cur, GridCoordinateInf64::new(0, 0));
     }
 }
