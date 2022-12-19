@@ -7,3 +7,5 @@ edition = "2021"
 
 [dependencies]
 filelib = { path = "../filelib" }
+sscanf = { version = "0.4.0" }
+rustc-hash = { version = '1.1.0' }
