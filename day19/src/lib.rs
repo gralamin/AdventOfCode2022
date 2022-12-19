@@ -1,6 +1,7 @@
 extern crate filelib;
 
 pub use filelib::load_no_blanks;
+use rustc_hash::FxHashMap;
 use rustc_hash::FxHashSet;
 use std::cmp::max;
 use std::collections::VecDeque;
@@ -34,24 +35,9 @@ impl Blueprint {
     }
 }
 
-#[derive(Debug, Clone, Eq, PartialEq, Ord, PartialOrd, Hash)]
-struct BuildMaterials {
-    ore: usize,
-    clay: usize,
-    obsidian: usize,
-}
-
-#[derive(Debug, Clone, Eq, PartialEq, Ord, PartialOrd, Hash)]
-struct RobotInventory {
-    ore: usize,
-    clay: usize,
-    obsidian: usize,
-    geode: usize,
-}
-
 //std::mem::size_of is 64
 #[derive(Default, Hash, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Debug)]
-struct SearchState {
+struct Inventory {
     ore: usize,
     clay: usize,
     obsidian: usize,
@@ -62,23 +48,22 @@ struct SearchState {
     geode_robot: usize,
 }
 
-
-impl SearchState {
-    fn new(r: RobotInventory, m: BuildMaterials, g: usize) -> SearchState {
-        return SearchState {
-            ore: m.ore,
-            clay: m.clay,
-            obsidian: m.obsidian,
-            geode: g,
-            ore_robot: r.ore,
-            clay_robot: r.clay,
-            obsidian_robot: r.obsidian,
-            geode_robot: r.geode,
+impl Inventory {
+    fn new(num_ore_robots: usize) -> Inventory {
+        return Inventory {
+            ore: 0,
+            clay: 0,
+            obsidian: 0,
+            geode: 0,
+            ore_robot: num_ore_robots,
+            clay_robot: 0,
+            obsidian_robot: 0,
+            geode_robot: 0,
         };
     }
 
-    fn collect(&self) -> SearchState {
-        return SearchState {
+    fn collect(&self) -> Inventory {
+        return Inventory {
             ore: self.ore + self.ore_robot,
             clay: self.clay + self.clay_robot,
             obsidian: self.obsidian + self.obsidian_robot,
@@ -92,7 +77,8 @@ impl SearchState {
 }
 
 // I cache per blueprint, so don't need blueprint in key.
-type Cache = FxHashSet<SearchState>;
+type Cache = FxHashMap<usize, usize>;
+type SeenState = FxHashSet<Inventory>;
 
 fn parse_blueprints(lines: &Vec<String>) -> Vec<Blueprint> {
     return lines.iter().map(|line| Blueprint::new(sscanf::sscanf!(line, "Blueprint {}: Each ore robot costs {} ore. Each clay robot costs {} ore. Each obsidian robot costs {} ore and {} clay. Each geode robot costs {} ore and {} obsidian.", usize, usize, usize, usize, usize, usize, usize).unwrap())).collect();
@@ -104,15 +90,13 @@ fn calculate_quality(b: &Blueprint, num_geodes: usize) -> usize {
 
 fn solve_single_blueprint(
     blueprint: &Blueprint,
-    robot_state: RobotInventory,
-    start_materials: BuildMaterials,
+    start_ore_robots: usize,
     num_turns: usize,
 ) -> usize {
     let mut cache = Cache::default();
-    let mut geodes = robot_state.geode;
 
     if num_turns == 0 {
-        return geodes;
+        return 0;
     }
 
     // never a point in generating more of a resource then we need, with the exception of geodes.
@@ -126,42 +110,31 @@ fn solve_single_blueprint(
     let max_clay_required = blueprint.obsidian_clay_cost;
     let max_obsidian_required = blueprint.geode_obsidian_cost;
 
-    let start_state = SearchState::new(robot_state, start_materials, geodes);
-    let mut queue: VecDeque<(SearchState, usize)> = VecDeque::new();
+    // If we ever have less geodes then another route with this, consider the route dead.
+    let max_fall_off = 2;
+
+    let start_state = Inventory::new(start_ore_robots);
+    let mut queue: VecDeque<(Inventory, usize)> = VecDeque::new();
     queue.push_back((start_state, num_turns));
+    let mut seen = SeenState::default();
 
-    while let Some((mut state, cur_turns)) = queue.pop_front() {
+    while let Some((state, cur_turns)) = queue.pop_front() {
+        let &prior_best = cache.get(&cur_turns).unwrap_or(&0);
+        if state.geode + max_fall_off < prior_best {
+            continue;
+        }
+        cache.insert(cur_turns, prior_best.max(state.geode));
+
         if cur_turns == 0 {
-            geodes = geodes.max(state.geode);
             continue;
         }
 
-        // Heuristics here to cut out states
-        // Once we have the maximum number of robots, we can throw away the waste materials to reduce size of problem
-        if state.ore_robot >= max_ore_required {
-            state.ore = state.ore.min(max_ore_required);
-        }
-        if state.clay_robot >= max_clay_required {
-            state.clay = state.clay.min(max_clay_required);
-        }
-        if state.obsidian_robot >= max_obsidian_required {
-            state.obsidian = state.obsidian.min(max_obsidian_required);
-        }
-
-        if cache.contains(&state) {
-            // We've already handled this
-            // Since we are BFS, its going to be a worse case of a later turn in the same state.
+        // We are a BFS, so if we see the same state later, that means its just a later turn version of the same thing as another move
+        // Which will always be worse then being in that state earlier.
+        if seen.contains(&state) {
             continue;
         }
-        cache.insert(state);
-
-        if cache.len() % 1000000 == 0 {            
-            println!("Cache is at size {}, ", cache.len());
-            println!("queue is at size {}, ", queue.len());
-            if cache.len() + queue.len() >= 100000000 {
-                panic!("Cache and queue combined are taking up almost all memory available");
-            }
-        }
+        seen.insert(state);
 
         // You can think of a turn as made of three phases
         // Construction start (pay costs)
@@ -169,6 +142,11 @@ fn solve_single_blueprint(
         // construction finish (gain robots)
 
         let new_state_base = state.collect();
+        let &next_best = cache.get(&(cur_turns - 1)).unwrap_or(&0);
+        if new_state_base.geode + max_fall_off < next_best {
+            // trim off all of these possibilities immediately
+            continue;
+        }
 
         if state.ore_robot < max_ore_required && blueprint.ore_robot_cost <= state.ore {
             let mut new_state = new_state_base.clone();
@@ -203,7 +181,7 @@ fn solve_single_blueprint(
             queue.push_back((new_state_base, cur_turns - 1));
         }
     }
-    return geodes;
+    return *cache.get(&0).unwrap();
 }
 
 /// Solution to puzzle_a entry point
@@ -219,35 +197,19 @@ pub fn puzzle_a(input: &Vec<String>) -> usize {
 
 // seperated out for easy testing
 fn solve_puzzle_a_state(blueprints: Vec<Blueprint>, num_rounds: usize) -> usize {
-    let num_ore_collecting_robots_start = 1;
-    let robot_types = RobotInventory {
-        ore: num_ore_collecting_robots_start,
-        clay: 0,
-        obsidian: 0,
-        geode: 0,
-    };
-    let start_mats = BuildMaterials {
-        ore: 0,
-        clay: 0,
-        obsidian: 0,
-    };
-
-    // Use multi threading :D
     let handles: Vec<JoinHandle<usize>> = blueprints
         .into_iter()
         .map(|b| {
-            let r = robot_types.clone();
-            let s = start_mats.clone();
             return thread::Builder::new()
                 .name(format!("blueprint-thread-{}", b.id).to_string())
                 .spawn(move || {
-                    return calculate_quality(&b, solve_single_blueprint(&b, r, s, num_rounds));
+                    return calculate_quality(&b, solve_single_blueprint(&b, 1, num_rounds));
                 })
                 .unwrap();
         })
         .collect();
-    let joins: Vec<usize> = handles.into_iter().map(|t| t.join().unwrap()).collect();
-    return joins.iter().sum();
+    let qualities: Vec<usize> = handles.into_iter().map(|t| t.join().unwrap()).collect();
+    return qualities.iter().sum();
 }
 
 /// Solution to puzzle_b entry point
@@ -265,28 +227,13 @@ pub fn puzzle_b(input: &Vec<String>) -> usize {
 }
 
 fn solve_puzzle_b_state(blueprints: Vec<Blueprint>, num_rounds: usize) -> usize {
-    let num_ore_collecting_robots_start = 1;
-    let robot_types = RobotInventory {
-        ore: num_ore_collecting_robots_start,
-        clay: 0,
-        obsidian: 0,
-        geode: 0,
-    };
-    let start_mats = BuildMaterials {
-        ore: 0,
-        clay: 0,
-        obsidian: 0,
-    };
-
     let handles: Vec<JoinHandle<usize>> = blueprints
         .into_iter()
         .map(|b| {
-            let r = robot_types.clone();
-            let s = start_mats.clone();
             return thread::Builder::new()
                 .name(format!("blueprint-thread-{}", b.id).to_string())
                 .spawn(move || {
-                    return solve_single_blueprint(&b, r, s, num_rounds);
+                    return solve_single_blueprint(&b, 1, num_rounds);
                 })
                 .unwrap();
         })
@@ -299,11 +246,18 @@ fn solve_puzzle_b_state(blueprints: Vec<Blueprint>, num_rounds: usize) -> usize 
 mod tests {
     use super::*;
 
+    fn get_blueprint_1() -> Vec<String> {
+        return vec!["Blueprint 1: Each ore robot costs 4 ore. Each clay robot costs 2 ore. Each obsidian robot costs 3 ore and 14 clay. Each geode robot costs 2 ore and 7 obsidian.".to_string()];
+    }
+
+    fn get_blueprint_2() -> Vec<String> {
+        return vec!["Blueprint 2: Each ore robot costs 2 ore. Each clay robot costs 3 ore. Each obsidian robot costs 3 ore and 8 clay. Each geode robot costs 3 ore and 12 obsidian.".to_string()];
+    }
+
     #[test]
     fn test_parse_blueprint() {
         let expected: Vec<Blueprint> = vec![Blueprint::new((2, 2, 3, 3, 8, 3, 12))];
-        assert_eq!(parse_blueprints(&vec!["Blueprint 2: Each ore robot costs 2 ore. Each clay robot costs 3 ore. Each obsidian robot costs 3 ore and 8 clay. Each geode robot costs 3 ore and 12 obsidian.".to_string()]), 
-        expected);
+        assert_eq!(parse_blueprints(&get_blueprint_2()), expected);
     }
 
     #[test]
@@ -315,8 +269,8 @@ mod tests {
     }
 
     #[test]
-    fn test_partial_a() {
-        let vec1: Vec<String> = vec!["Blueprint 1: Each ore robot costs 4 ore. Each clay robot costs 2 ore. Each obsidian robot costs 3 ore and 14 clay. Each geode robot costs 2 ore and 7 obsidian.".to_string()];
+    fn test_partial_a_1() {
+        let vec1: Vec<String> = get_blueprint_1();
         let blueprints = parse_blueprints(&vec1);
         assert_eq!(solve_puzzle_a_state(blueprints.clone(), 18), 0);
         assert_eq!(solve_puzzle_a_state(blueprints.clone(), 19), 1);
@@ -324,8 +278,15 @@ mod tests {
     }
 
     #[test]
+    fn test_partial_a_2() {
+        let vec1: Vec<String> = get_blueprint_2();
+        let blueprints = parse_blueprints(&vec1);
+        assert_eq!(solve_puzzle_a_state(blueprints, 24), 24);
+    }
+
+    #[test]
     fn test_partial_b() {
-        let vec1: Vec<String> = vec!["Blueprint 1: Each ore robot costs 4 ore. Each clay robot costs 2 ore. Each obsidian robot costs 3 ore and 14 clay. Each geode robot costs 2 ore and 7 obsidian.".to_string()];
+        let vec1: Vec<String> = get_blueprint_1();
         let blueprints = parse_blueprints(&vec1);
         assert_eq!(solve_puzzle_b_state(blueprints, 32), 56);
     }
