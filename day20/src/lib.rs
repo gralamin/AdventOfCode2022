@@ -20,10 +20,7 @@ pub fn mix_numbers(input: Vec<i64>, iters: usize) -> Vec<i64> {
             // The key thing here is there are DUPLICATES.
             // if we just go by the queue values, we will end up hitting the first
             // value, instead of the proper indexed number.
-            let idx = queue
-                .iter()
-                .position(|(j, _)| i == *j)
-                .unwrap();
+            let idx = queue.iter().position(|(j, _)| i == *j).unwrap();
             queue.rotate_left(idx);
             let (j, v) = queue.pop_front().unwrap();
             let d = v.rem_euclid(queue.len() as i64) as usize;
@@ -38,16 +35,12 @@ pub fn mix_numbers(input: Vec<i64>, iters: usize) -> Vec<i64> {
 }
 
 fn get_coords(queue: Vec<i64>) -> Vec<i64> {
-    let zero_pos = queue
-        .iter()
-        .position(|j| j == &0)
-        .unwrap();
+    let zero_pos = queue.iter().position(|j| j == &0).unwrap();
     return vec![1000, 2000, 3000]
         .iter()
         .map(|index| queue[(zero_pos + index) % queue.len()])
         .collect();
 }
-
 
 /// Solution to puzzle_a entry point
 /// ```
@@ -103,5 +96,4 @@ mod tests {
         let result = get_coords(vec);
         assert_eq!(result, vec![4, -3, 2]);
     }
-
 }
