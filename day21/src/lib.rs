@@ -38,7 +38,9 @@ impl Operation {
                 if left_value == right_value {
                     1
                 } else {
-                    0
+                    // We are going to use an approximation instead of solving for now
+                    // But we need the difference to approximate.
+                    left_value - right_value
                 }
             },
         };
@@ -175,10 +177,18 @@ pub fn puzzle_b(input: &Vec<String>) -> i64 {
         let cur_monkey = human_monkey.clone();
         let mut cur_list = monkey_list.clone();
         cur_list.push(cur_monkey);
-        if solve_monkeys(cur_list) == 1 {
+        let result = solve_monkeys(cur_list);
+        if result == 1 {
             break;
+        } else {
+            // approximation algorithm, move massively toward the result, if we are below 100, add to it
+            // This will rapidly get us in the correct range, but it isn't a true solution.
+            if result < 100 {
+                counter += 1;
+            } else {
+                counter += (result / 100);
+            }
         }
-        counter += 1;
         human_monkey.left_value = Value::Discrete(counter);
     }
     return counter;
