@@ -42,7 +42,7 @@ impl Operation {
                     // But we need the difference to approximate.
                     left_value - right_value
                 }
-            },
+            }
         };
     }
 }
@@ -171,7 +171,7 @@ pub fn puzzle_b(input: &Vec<String>) -> i64 {
     let mut human_monkey = monkey_list.remove(pos);
     let mut counter = match human_monkey.left_value.clone() {
         Value::Discrete(n) => n,
-        _ => panic!("whoops")
+        _ => panic!("whoops"),
     };
     loop {
         let cur_monkey = human_monkey.clone();
