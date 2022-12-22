@@ -1,10 +1,10 @@
-use day22::load_no_blanks;
+use day22::load;
 use day22::puzzle_a;
 use day22::puzzle_b;
 
 fn main() {
     let filename = "input";
-    let template = load_no_blanks(filename);
+    let template = load(filename);
 
     let value = puzzle_a(&template);
     println!("Answer to 1st question: {}", value);
