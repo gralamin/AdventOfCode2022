@@ -216,7 +216,7 @@ impl Iterator for GridIter {
     }
 }
 
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone, Eq, PartialEq)]
 pub enum Direction {
     NORTH,
     EAST,
