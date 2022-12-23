@@ -150,7 +150,7 @@ pub fn puzzle_a(input: &str) -> usize {
 
 // This doesn't check the vlaue, other then its a tile, it just finds the edge
 fn find_edge(board: &Board, start: GridCoordinate, direction: Direction) -> GridCoordinate {
-    println!("Finding edge from {} to {}", start, direction);
+    //println!("Finding edge from {} to {}", start, direction);
     let mut cur_coordinate = start;
     loop {
         match board.get_value(cur_coordinate) {
@@ -180,18 +180,18 @@ fn follow_path(
     start: GridCoordinate,
     start_facing: Direction,
 ) -> usize {
-    println!("Following {:?}", path);
+    //println!("Following {:?}", path);
     let mut cur_facing = start_facing;
     let mut cur_coordinate = start;
     for step in path {
-        println!("Doing step: {:?}", step);
+        //println!("Doing step: {:?}", step);
         cur_facing = step.turn(cur_facing);
         if let PathStep::Forward(forward_steps) = step {
             for _ in 0..forward_steps {
                 if let Some(new_coord) =
                     get_next_coord_in_direction(board, cur_coordinate, cur_facing)
                 {
-                    println!("Moved to {}", new_coord);
+                    //println!("Moved to {}", new_coord);
                     cur_coordinate = new_coord;
                 } else {
                     // Hit a wall, stop moving forward
@@ -236,19 +236,19 @@ fn get_next_coord_in_direction(
         // Over the top edge, we are wrapping.
         is_wrapped = true;
         wrapped_y_follow = height - 1;
-        println!("Top edge wrap detected");
+        //println!("Top edge wrap detected");
     } else if location.y == height - 1 && direction == Direction::SOUTH {
         is_wrapped = true;
         wrapped_y_follow = 0;
-        println!("Bottom edge wrap detected");
+        //println!("Bottom edge wrap detected");
     } else if location.x == 0 && direction == Direction::WEST {
         is_wrapped = true;
         wrapped_x_follow = width - 1;
-        println!("left edge wrap detected");
+        //println!("left edge wrap detected");
     } else if location.x == width - 1 && direction == Direction::EAST {
         is_wrapped = true;
         wrapped_x_follow = 0;
-        println!("right edge wrap detected");
+        //println!("right edge wrap detected");
     }
     // We are still "on the board", but the next step is an empty space.
     // We will handle this case later.
@@ -261,7 +261,7 @@ fn get_next_coord_in_direction(
         );
         possible_x = Some(coord.x);
         possible_y = Some(coord.y);
-        print_board(board, coord, wrapped_direction);
+        //print_board(board, coord, wrapped_direction);
     } else {
         // Didn't wrap, if we should move forward, its a normal move
         match direction {
@@ -280,7 +280,7 @@ fn get_next_coord_in_direction(
                 Some(inner_option) => {
                     match inner_option {
                         None => {
-                            println!("{} is empty, wrapping", coord);
+                            //println!("{} is empty, wrapping", coord);
                             // "On the board": but next step is an empty space.
                             match direction {
                                 Direction::NORTH => {
@@ -302,7 +302,7 @@ fn get_next_coord_in_direction(
                                 GridCoordinate::new(wrapped_x_follow, wrapped_y_follow),
                                 wrapped_direction,
                             );
-                            print_board(board, coord2, wrapped_direction);
+                            //print_board(board, coord2, wrapped_direction);
                             match board.get_value(coord2).unwrap().unwrap() {
                                 BoardTile::Open => return Some(coord2),
                                 BoardTile::Solid => return None,
@@ -585,18 +585,18 @@ fn follow_path_chunks(
     start_facing: Direction,
     chunks: &Vec<Chunk>,
 ) -> usize {
-    println!("Following {:?}", path);
+    //println!("Following {:?}", path);
     let mut cur_facing = start_facing;
     let mut cur_coordinate = start;
     for step in path {
-        println!("Doing step: {:?}", step);
+        //println!("Doing step: {:?}", step);
         cur_facing = step.turn(cur_facing);
         if let PathStep::Forward(forward_steps) = step {
             for _ in 0..forward_steps {
                 if let Some((new_coord, new_direction)) =
                     get_next_coord_in_direction_chunks(board, cur_coordinate, cur_facing, chunks)
                 {
-                    println!("Moved to {}, facing: {}", new_coord, new_direction);
+                    //println!("Moved to {}, facing: {}", new_coord, new_direction);
                     cur_coordinate = new_coord;
                     cur_facing = new_direction;
                 } else {
@@ -620,7 +620,7 @@ fn follow_path_chunks(
 }
 
 fn get_cur_chunk(chunks: &Vec<Chunk>, location: GridCoordinate) -> Chunk {
-    println!("Getting chunk for {}", location);
+    //println!("Getting chunk for {}", location);
     return chunks
         .iter()
         .filter(|c| {
@@ -651,8 +651,9 @@ fn warp_left(chunks: &Vec<Chunk>, chunk: Chunk, location: GridCoordinate) -> (us
         }
         Direction::EAST => {
             // Hey we are just beside each other.
+            let y_diff = chunk.bottom_right.y - location.y;
             new_x = next_chunk.bottom_right.x;
-            new_y = location.y;
+            new_y = next_chunk.bottom_right.y - y_diff;
         }
         Direction::SOUTH => {
             // Like North, but other direction
@@ -678,7 +679,7 @@ fn warp_right(chunks: &Vec<Chunk>, chunk: Chunk, location: GridCoordinate) -> (u
         .unwrap();
     let new_x;
     let new_y;
-    println!("Going from {:?} to {:?}", chunk, next_chunk);
+    //println!("Going from {:?} to {:?}", chunk, next_chunk);
     match chunk.right_edge_warp.1 {
         Direction::NORTH => {
             // 90 degree turn, the y doesn't change here, but the x should be based on the previous y
@@ -702,8 +703,9 @@ fn warp_right(chunks: &Vec<Chunk>, chunk: Chunk, location: GridCoordinate) -> (u
         }
         Direction::WEST => {
             // Hey we are just beside each other.
+            let y_diff = location.y - chunk.top_left.y;
             new_x = next_chunk.top_left.x;
-            new_y = location.y;
+            new_y = next_chunk.top_left.y + y_diff;
         }
         _ => unreachable!(),
     }
@@ -733,8 +735,9 @@ fn warp_top(chunks: &Vec<Chunk>, chunk: Chunk, location: GridCoordinate) -> (usi
         }
         Direction::SOUTH => {
             // Like North, but other direction
+            let x_diff = location.x - chunk.top_left.x;
             new_y = next_chunk.bottom_right.y;
-            new_x = location.x;
+            new_x = next_chunk.top_left.x + x_diff;
         }
         Direction::WEST => {
             // TL on chunk should be TL
@@ -756,18 +759,18 @@ fn warp_bottom(chunks: &Vec<Chunk>, chunk: Chunk, location: GridCoordinate) -> (
         .unwrap();
     let new_x;
     let new_y;
-    println!("Going from {:?} to {:?}", chunk, next_chunk);
+    //println!("Going from {:?} to {:?}", chunk, next_chunk);
     match chunk.bottom_edge_warp.1 {
         Direction::NORTH => {
+            let x_diff = location.x - chunk.top_left.x;
             new_y = next_chunk.top_left.y;
-            new_x = location.x;
+            new_x = next_chunk.top_left.x + x_diff;
         }
         Direction::EAST => {
             // 90 degree turn, the x doesn't change here, but the y should be based on the previous x
             let y_diff = location.x - chunk.top_left.x;
             new_y = next_chunk.top_left.y + y_diff;
             new_x = next_chunk.bottom_right.x;
-            println!("x: {}", new_x);
         }
         Direction::SOUTH => {
             // Like North, but other direction
@@ -809,26 +812,26 @@ fn get_next_coord_in_direction_chunks(
 
     // We will always wrap if we are moving off an edge of a chunk
     if chunk.top_left.x == location.x && direction == Direction::WEST {
-        println!("left Warp detected");
-        print_board(board, location, direction);
+        //println!("left Warp detected");
+        //print_board(board, location, direction);
         (wrapped_x_follow, wrapped_y_follow) = warp_left(chunks, chunk, location);
         wrapped_direction = chunk.left_edge_warp.2;
         is_wrapped = true;
     } else if chunk.bottom_right.x == location.x && direction == Direction::EAST {
-        println!("right Warp detected");
-        print_board(board, location, direction);
+        //println!("right Warp detected");
+        //print_board(board, location, direction);
         (wrapped_x_follow, wrapped_y_follow) = warp_right(chunks, chunk, location);
         wrapped_direction = chunk.right_edge_warp.2;
         is_wrapped = true;
     } else if chunk.top_left.y == location.y && direction == Direction::NORTH {
-        println!("top Warp detected");
-        print_board(board, location, direction);
+        //println!("top Warp detected");
+        //print_board(board, location, direction);
         (wrapped_x_follow, wrapped_y_follow) = warp_top(chunks, chunk, location);
         wrapped_direction = chunk.top_edge_warp.2;
         is_wrapped = true;
     } else if chunk.bottom_right.y == location.y && direction == Direction::SOUTH {
-        println!("bottom Warp detected");
-        print_board(board, location, direction);
+        //println!("bottom Warp detected");
+        //print_board(board, location, direction);
         (wrapped_x_follow, wrapped_y_follow) = warp_bottom(chunks, chunk, location);
         wrapped_direction = chunk.bottom_edge_warp.2;
         is_wrapped = true;
@@ -842,7 +845,7 @@ fn get_next_coord_in_direction_chunks(
         );
         possible_x = Some(coord.x);
         possible_y = Some(coord.y);
-        print_board(board, coord, wrapped_direction);
+        //print_board(board, coord, wrapped_direction);
     } else {
         // Didn't wrap, if we should move forward, its a normal move
         match direction {
@@ -861,7 +864,7 @@ fn get_next_coord_in_direction_chunks(
                 Some(inner_option) => {
                     match inner_option {
                         None => {
-                            println!("{} is empty, wrapping", coord);
+                            //println!("{} is empty, wrapping", coord);
                             // "On the board": but next step is an empty space.
                             match direction {
                                 Direction::NORTH => {
@@ -883,7 +886,7 @@ fn get_next_coord_in_direction_chunks(
                                 GridCoordinate::new(wrapped_x_follow, wrapped_y_follow),
                                 wrapped_direction,
                             );
-                            print_board(board, coord2, wrapped_direction);
+                            //print_board(board, coord2, wrapped_direction);
                             match board.get_value(coord2).unwrap().unwrap() {
                                 BoardTile::Open => return Some((coord2, wrapped_direction)),
                                 BoardTile::Solid => return None,
@@ -990,6 +993,21 @@ mod tests {
             get_next_coord_in_direction_chunks(&board, bottom_left, direction, &chunks).unwrap();
         assert_eq!(result_coord, GridCoordinate::new(3, 7));
         assert_eq!(result_direction, direction);
+
+        let input = "  ....\n  ....\n  ..  \n  ..  \n....  \n....  \n..    \n..    ";
+        let board = parse_board(input.lines().collect());
+        let chunks = Chunk::manual_mapped(2);
+        let top_left = GridCoordinate::new(4, 0);
+        let (result_coord, result_direction) =
+            get_next_coord_in_direction_chunks(&board, top_left, direction, &chunks).unwrap();
+        assert_eq!(result_coord, GridCoordinate::new(3, 0));
+        assert_eq!(result_direction, Direction::WEST);
+
+        let bottom_left = GridCoordinate::new(4, 1);
+        let (result_coord, result_direction) =
+            get_next_coord_in_direction_chunks(&board, bottom_left, direction, &chunks).unwrap();
+        assert_eq!(result_coord, GridCoordinate::new(3, 1));
+        assert_eq!(result_direction, Direction::WEST);
     }
 
     #[test]
@@ -1010,6 +1028,21 @@ mod tests {
         let (result_coord, result_direction) =
             get_next_coord_in_direction_chunks(&board, bottom_left, direction, &chunks).unwrap();
         assert_eq!(result_coord, GridCoordinate::new(7, 4));
+        assert_eq!(result_direction, Direction::SOUTH);
+
+        let input = "  ....\n  ....\n  ..  \n  ..  \n....  \n....  \n..    \n..    ";
+        let board = parse_board(input.lines().collect());
+        let chunks = Chunk::manual_mapped(2);
+        let top_left = GridCoordinate::new(0, 6);
+        let (result_coord, result_direction) =
+            get_next_coord_in_direction_chunks(&board, top_left, direction, &chunks).unwrap();
+        assert_eq!(result_coord, GridCoordinate::new(2, 0));
+        assert_eq!(result_direction, Direction::SOUTH);
+
+        let bottom_left = GridCoordinate::new(0, 7);
+        let (result_coord, result_direction) =
+            get_next_coord_in_direction_chunks(&board, bottom_left, direction, &chunks).unwrap();
+        assert_eq!(result_coord, GridCoordinate::new(3, 0));
         assert_eq!(result_direction, Direction::SOUTH);
     }
 
@@ -1147,6 +1180,23 @@ mod tests {
             get_next_coord_in_direction_chunks(&board, bottom_left, direction, &chunks).unwrap();
         assert_eq!(result_coord, GridCoordinate::new(8, 3));
         assert_eq!(result_direction, Direction::EAST);
+
+        let input = "  ....\n  ....\n  ..  \n  ..  \n....  \n....  \n..    \n..    ";
+        let board = parse_board(input.lines().collect());
+        let chunks = Chunk::manual_mapped(2);
+        let top_left = GridCoordinate::new(2, 0);
+        let mut direction = Direction::NORTH;
+        let (result_coord, result_direction) =
+            get_next_coord_in_direction_chunks(&board, top_left, direction, &chunks).unwrap();
+        assert_eq!(result_coord, GridCoordinate::new(0, 6));
+        assert_eq!(result_direction, Direction::EAST);
+
+        let bottom_left = GridCoordinate::new(3, 0);
+        direction = Direction::NORTH;
+        let (result_coord, result_direction) =
+            get_next_coord_in_direction_chunks(&board, bottom_left, direction, &chunks).unwrap();
+        assert_eq!(result_coord, GridCoordinate::new(0, 7));
+        assert_eq!(result_direction, Direction::EAST);
     }
 
     #[test]
@@ -1168,6 +1218,21 @@ mod tests {
             get_next_coord_in_direction_chunks(&board, bottom_left, direction, &chunks).unwrap();
         assert_eq!(result_coord, GridCoordinate::new(10, 4));
         assert_eq!(result_direction, direction);
+
+        let input = "  ....\n  ....\n  ..  \n  ..  \n....  \n....  \n..    \n..    ";
+        let board = parse_board(input.lines().collect());
+        let chunks = Chunk::manual_mapped(2);
+        let top_left = GridCoordinate::new(0, 7);
+        let (result_coord, result_direction) =
+            get_next_coord_in_direction_chunks(&board, top_left, direction, &chunks).unwrap();
+        assert_eq!(result_coord, GridCoordinate::new(4, 0));
+        assert_eq!(result_direction, Direction::SOUTH);
+
+        let bottom_left = GridCoordinate::new(1, 7);
+        let (result_coord, result_direction) =
+            get_next_coord_in_direction_chunks(&board, bottom_left, direction, &chunks).unwrap();
+        assert_eq!(result_coord, GridCoordinate::new(5, 0));
+        assert_eq!(result_direction, Direction::SOUTH);
     }
 
     #[test]
