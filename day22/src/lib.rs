@@ -639,7 +639,7 @@ fn warp_right(chunks: &Vec<Chunk>, chunk: Chunk, location: GridCoordinate) -> (u
         Direction::SOUTH => {
             // Like North, but other direction
             let x_diff = location.y - chunk.top_left.y;
-            new_x = next_chunk.bottom_right.x + x_diff;
+            new_x = next_chunk.top_left.x + x_diff;
             new_y = next_chunk.bottom_right.y;
         }
         Direction::WEST => {
