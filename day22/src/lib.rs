@@ -482,6 +482,64 @@ impl Chunk {
                     bottom_edge_warp: (3, Direction::EAST, Direction::WEST),
                 },
             ];
+        } else if chunk_size == 2 {
+            // mini board of real data, for testing purposes
+            return vec![
+                Chunk {
+                    chunk_id: 3,
+                    top_left: GridCoordinate::new(2, 2),
+                    bottom_right: GridCoordinate::new(3, 3),
+                    left_edge_warp: (4, Direction::NORTH, Direction::SOUTH),
+                    right_edge_warp: (2, Direction::SOUTH, Direction::NORTH),
+                    top_edge_warp: (1, Direction::SOUTH, Direction::NORTH),
+                    bottom_edge_warp: (5, Direction::NORTH, Direction::SOUTH),
+                },
+                Chunk {
+                    chunk_id: 6,
+                    top_left: GridCoordinate::new(0, 6),
+                    bottom_right: GridCoordinate::new(1, 7),
+                    left_edge_warp: (1, Direction::NORTH, Direction::SOUTH),
+                    right_edge_warp: (5, Direction::SOUTH, Direction::NORTH),
+                    top_edge_warp: (4, Direction::SOUTH, Direction::NORTH),
+                    bottom_edge_warp: (2, Direction::NORTH, Direction::SOUTH),
+                },
+                Chunk {
+                    chunk_id: 4,
+                    top_left: GridCoordinate::new(0, 4),
+                    bottom_right: GridCoordinate::new(1, 5),
+                    left_edge_warp: (1, Direction::WEST, Direction::EAST),
+                    right_edge_warp: (5, Direction::WEST, Direction::EAST),
+                    top_edge_warp: (3, Direction::WEST, Direction::EAST),
+                    bottom_edge_warp: (6, Direction::NORTH, Direction::SOUTH),
+                },
+                Chunk {
+                    chunk_id: 5,
+                    top_left: GridCoordinate::new(2, 4),
+                    bottom_right: GridCoordinate::new(3, 5),
+                    left_edge_warp: (4, Direction::EAST, Direction::WEST),
+                    right_edge_warp: (2, Direction::EAST, Direction::WEST),
+                    top_edge_warp: (3, Direction::SOUTH, Direction::NORTH),
+                    bottom_edge_warp: (6, Direction::EAST, Direction::WEST),
+                },
+                Chunk {
+                    chunk_id: 1,
+                    top_left: GridCoordinate::new(2, 0),
+                    bottom_right: GridCoordinate::new(3, 1),
+                    left_edge_warp: (4, Direction::WEST, Direction::EAST),
+                    right_edge_warp: (2, Direction::WEST, Direction::EAST),
+                    top_edge_warp: (6, Direction::WEST, Direction::EAST),
+                    bottom_edge_warp: (3, Direction::NORTH, Direction::SOUTH),
+                },
+                Chunk {
+                    chunk_id: 2,
+                    top_left: GridCoordinate::new(4, 0),
+                    bottom_right: GridCoordinate::new(5, 1),
+                    left_edge_warp: (1, Direction::EAST, Direction::WEST),
+                    right_edge_warp: (5, Direction::EAST, Direction::WEST),
+                    top_edge_warp: (6, Direction::SOUTH, Direction::NORTH),
+                    bottom_edge_warp: (3, Direction::EAST, Direction::WEST),
+                },
+            ];
         } else {
             panic!("Unknown chunk size");
         }
@@ -603,9 +661,9 @@ fn warp_left(chunks: &Vec<Chunk>, chunk: Chunk, location: GridCoordinate) -> (us
             new_y = next_chunk.bottom_right.y;
         }
         Direction::WEST => {
-            // essentially the same as EAST case.
+            let y_diff = chunk.bottom_right.y - location.y;
             new_x = next_chunk.top_left.x;
-            new_y = location.y;
+            new_y = next_chunk.top_left.y + y_diff;
         }
         _ => unreachable!(),
     }
@@ -706,10 +764,10 @@ fn warp_bottom(chunks: &Vec<Chunk>, chunk: Chunk, location: GridCoordinate) -> (
         }
         Direction::EAST => {
             // 90 degree turn, the x doesn't change here, but the y should be based on the previous x
-            let y_diff: i32 = chunk.top_left.x as i32 - location.x as i32;
-            let y_32 = next_chunk.bottom_right.y as i32 + y_diff;
-            new_y = y_32.try_into().unwrap();
+            let y_diff = location.x - chunk.top_left.x;
+            new_y = next_chunk.top_left.y + y_diff;
             new_x = next_chunk.bottom_right.x;
+            println!("x: {}", new_x);
         }
         Direction::SOUTH => {
             // Like North, but other direction
@@ -976,7 +1034,36 @@ mod tests {
         assert_eq!(result_direction, Direction::NORTH);
     }
 
-    // west_to_west: No examples in the example output, we would need to manually make new input and mappings
+    #[test]
+    fn test_warp_left_west_to_west() {
+        /* chunk size 2 output:
+        |   ....
+        |   ....
+        |   ..  
+        |   ..  
+        | ....  
+        | ....  
+        | ..    
+        | ..    
+        */
+        let input = "  ....\n  ....\n  ..  \n  ..  \n....  \n....  \n..    \n..    ";
+        let board = parse_board(input.lines().collect());
+        let chunks = Chunk::manual_mapped(2);
+
+        let top_left = GridCoordinate::new(0, 4);
+        let mut direction = Direction::WEST;
+        let (result_coord, result_direction) =
+            get_next_coord_in_direction_chunks(&board, top_left, direction, &chunks).unwrap();
+        assert_eq!(result_coord, GridCoordinate::new(2, 1));
+        assert_eq!(result_direction, Direction::EAST);
+
+        let bottom_left = GridCoordinate::new(0, 5);
+        direction = Direction::WEST;
+        let (result_coord, result_direction) =
+            get_next_coord_in_direction_chunks(&board, bottom_left, direction, &chunks).unwrap();
+        assert_eq!(result_coord, GridCoordinate::new(2, 0));
+        assert_eq!(result_direction, Direction::EAST);
+    }
 
     #[test]
     fn test_warp_top_north_to_south() {
@@ -1126,6 +1213,38 @@ mod tests {
     }
 
     #[test]
+    fn test_warp_bottom_south_to_east() {
+        /* chunk size 2 output:
+        |   ....
+        |   ....
+        |   ..  
+        |   ..  
+        | ....  
+        | ....  
+        | ..    
+        | ..    
+        */
+        let input = "  ....\n  ....\n  ..  \n  ..  \n....  \n....  \n..    \n..    ";
+        let board = parse_board(input.lines().collect());
+        let chunks = Chunk::manual_mapped(2);
+
+        let top_left = GridCoordinate::new(4, 1);
+        let mut direction = Direction::SOUTH;
+        let (result_coord, result_direction) =
+            get_next_coord_in_direction_chunks(&board, top_left, direction, &chunks).unwrap();
+        assert_eq!(result_coord, GridCoordinate::new(3, 2));
+        assert_eq!(result_direction, Direction::WEST);
+
+        let bottom_left = GridCoordinate::new(5, 1);
+        direction = Direction::SOUTH;
+        let (result_coord, result_direction) =
+            get_next_coord_in_direction_chunks(&board, bottom_left, direction, &chunks).unwrap();
+        assert_eq!(result_coord, GridCoordinate::new(3, 3));
+        assert_eq!(result_direction, Direction::WEST);
+    }
+
+
+    #[test]
     fn test_warp_right_east_to_west() {
         let input = "        ...#\n        .#..\n        #...\n        ....\n...#.......#\n........#...\n..#....#....\n..........#.\n        ...#....\n        .....#..\n        .#......\n        ......#.";
         let board = parse_board(input.lines().collect());
@@ -1186,5 +1305,36 @@ mod tests {
             get_next_coord_in_direction_chunks(&board, bottom_left, direction, &chunks).unwrap();
         assert_eq!(result_coord, GridCoordinate::new(12, 8));
         assert_eq!(result_direction, Direction::SOUTH);
+    }
+
+    #[test]
+    fn test_warp_right_east_to_south() {
+        /* chunk size 2 output:
+        |   ....
+        |   ....
+        |   ..  
+        |   ..  
+        | ....  
+        | ....  
+        | ..    
+        | ..    
+        */
+        let input = "  ....\n  ....\n  ..  \n  ..  \n....  \n....  \n..    \n..    ";
+        let board = parse_board(input.lines().collect());
+        let chunks = Chunk::manual_mapped(2);
+
+        let top_left = GridCoordinate::new(3, 2);
+        let mut direction = Direction::EAST;
+        let (result_coord, result_direction) =
+            get_next_coord_in_direction_chunks(&board, top_left, direction, &chunks).unwrap();
+        assert_eq!(result_coord, GridCoordinate::new(4, 1));
+        assert_eq!(result_direction, Direction::NORTH);
+
+        let bottom_left = GridCoordinate::new(3, 3);
+        direction = Direction::EAST;
+        let (result_coord, result_direction) =
+            get_next_coord_in_direction_chunks(&board, bottom_left, direction, &chunks).unwrap();
+        assert_eq!(result_coord, GridCoordinate::new(5, 1));
+        assert_eq!(result_direction, Direction::NORTH);
     }
 }
