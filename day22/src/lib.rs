@@ -1072,12 +1072,12 @@ mod tests {
         /* chunk size 2 output:
         |   ....
         |   ....
-        |   ..  
-        |   ..  
-        | ....  
-        | ....  
-        | ..    
-        | ..    
+        |   ..
+        |   ..
+        | ....
+        | ....
+        | ..
+        | ..
         */
         let input = "  ....\n  ....\n  ..  \n  ..  \n....  \n....  \n..    \n..    ";
         let board = parse_board(input.lines().collect());
@@ -1282,12 +1282,12 @@ mod tests {
         /* chunk size 2 output:
         |   ....
         |   ....
-        |   ..  
-        |   ..  
-        | ....  
-        | ....  
-        | ..    
-        | ..    
+        |   ..
+        |   ..
+        | ....
+        | ....
+        | ..
+        | ..
         */
         let input = "  ....\n  ....\n  ..  \n  ..  \n....  \n....  \n..    \n..    ";
         let board = parse_board(input.lines().collect());
@@ -1307,7 +1307,6 @@ mod tests {
         assert_eq!(result_coord, GridCoordinate::new(3, 3));
         assert_eq!(result_direction, Direction::WEST);
     }
-
 
     #[test]
     fn test_warp_right_east_to_west() {
@@ -1377,12 +1376,12 @@ mod tests {
         /* chunk size 2 output:
         |   ....
         |   ....
-        |   ..  
-        |   ..  
-        | ....  
-        | ....  
-        | ..    
-        | ..    
+        |   ..
+        |   ..
+        | ....
+        | ....
+        | ..
+        | ..
         */
         let input = "  ....\n  ....\n  ..  \n  ..  \n....  \n....  \n..    \n..    ";
         let board = parse_board(input.lines().collect());
