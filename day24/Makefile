@@ -4,6 +4,10 @@ build:
 	cargo build --verbose
 	cp target/debug/$(prog) $(prog).day
 
+build_r:
+	cargo build -r --verbose
+	cp target/release/$(prog) $(prog).day
+
 test:
 	cargo test --verbose
 
