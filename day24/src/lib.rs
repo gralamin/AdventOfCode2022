@@ -258,10 +258,36 @@ pub fn puzzle_a(input: &Vec<String>) -> usize {
 /// Solution to puzzle_b entry point
 /// ```
 /// let vec1: Vec<String> = vec!["#.######","#>>.<^<#","#.<..<<#","#>v.><>#","#<^v^^>#","######.#"].iter().map(|s| s.to_string()).collect();
-/// assert_eq!(day24::puzzle_b(&vec1), 2);
+/// assert_eq!(day24::puzzle_b(&vec1), 54);
 /// ```
-pub fn puzzle_b(_input: &Vec<String>) -> i32 {
-    return 2;
+pub fn puzzle_b(input: &Vec<String>) -> usize {
+    let (grid, blizzards) = parse_input(input);
+    let start = GridCoordinate::new(1, 0);
+    let end = GridCoordinate::new(grid.get_width() - 2, grid.get_height() - 1);
+    let end_first = bfs_through(&grid, start, end, blizzards.clone());
+    let blizzards_two = get_blizzards_after_n_turns(&blizzards, end_first, &grid);
+    let end_second = bfs_through(&grid, end, start, blizzards_two.clone());
+    let blizzards_three = get_blizzards_after_n_turns(&blizzards_two, end_second, &grid);
+    let end_third = bfs_through(&grid, start, end, blizzards_three);
+    return end_first + end_second + end_third;
+}
+
+fn get_blizzards_after_n_turns(
+    blizzards: &Vec<Blizzard>,
+    n: usize,
+    grid: &Grid<ValleyTile>,
+) -> Vec<Blizzard> {
+    let mut last_blizzard_cycle;
+    let mut new_cycle = blizzards.clone();
+
+    for _ in 0..n {
+        last_blizzard_cycle = new_cycle;
+        new_cycle = last_blizzard_cycle
+            .iter()
+            .map(|b| b.step_clone(grid))
+            .collect();
+    }
+    return new_cycle;
 }
 
 #[cfg(test)]
